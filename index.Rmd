@@ -1,0 +1,72 @@
+---
+title: "Registration Frustration"
+author: "Austin Meyer"
+output: html_notebook
+---
+
+```{r}
+library("rvest")
+library("tidyr")
+library("dplyr")
+```
+
+Lets turn our lovely html page into a html text so we can search it for yummy information. 
+```{r}
+read_class_schedule <- function(url) {
+  
+  schedule_html <- read_html(url)
+  
+  classes <- schedule_html %>% html_nodes("tbody")
+  
+  class_subject <- classes %>%
+                  html_nodes("td.subj") %>%
+                  html_text()
+  class_number <- classes %>%
+                  html_nodes("td.cat_num") %>%
+                  html_text()
+  class_sect <- classes %>%
+                  html_nodes("td.sect") %>%
+                  html_text()
+  class_title <- classes %>%
+                  html_nodes("td.title") %>%
+                  html_text()
+  class_instructor <- classes %>%
+                  html_nodes("td.Instructor") %>%
+                  html_text()
+  class_size <- classes %>%
+                html_nodes("td.seatsavail") %>%
+                html_text() %>%
+                as.integer()
+  class_filled <- classes %>%
+                  html_nodes("td.enrtot") %>%
+                  html_text()
+  class_time <- classes %>%
+                html_nodes("td.time") %>%
+                html_text()
+  class_days <- classes %>%
+                html_nodes("td.days") %>%
+                html_text()
+  
+  schedule <- tibble(subject=class_subject, title=class_title, number=class_number, section=class_sect, instructor=class_instructor, class_size=class_size, class_size_actual=class_filled, class_days=class_days, class_time=class_time)
+}
+```
+
+Now lets put them into wonderful tables that will show this data together.
+```{r}
+# First we will go ahead and capture the urls that we want to scrape from
+url_csci_2020 <- "http://ems.csuchico.edu/APSS/schedule/spr2020/CSCI.shtml"
+url_csci_2019 <- "http://ems.csuchico.edu/APSS/schedule/spr2019/CSCI.shtml"
+
+url_math_2019 <- "http://ems.csuchico.edu/APSS/schedule/spr2019/MATH.shtml"
+url_math_2020 <- "http://ems.csuchico.edu/APSS/schedule/spr2020/MATH.shtml"
+
+# Then using the funciton we made above, we will make four seperate tables for each url.
+schedule_csci_2020 <- read_class_schedule(url = url_csci_2020)
+schedule_csci_2019 <- read_class_schedule(url = url_csci_2019)
+schedule_math_2019 <- read_class_schedule(url = url_math_2019)
+schedule_math_2020 <- read_class_schedule(url = url_math_2020)
+
+# Last we will bind them together.
+together <- rbind(schedule_csci_2020, schedule_csci_2019, schedule_math_2019, schedule_math_2020)
+```
+
